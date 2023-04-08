@@ -52,6 +52,7 @@ def csv_helper(file_name: str) -> Iterator[Stock]:
 
 
 @op(
+    name="get_s3_data",
     description="Get a list of Stocks from an S3 file",
     config_schema={"s3_key": str},
     out={"stocks": Out(List[Stock], description="A list of Stock items")},
@@ -63,6 +64,7 @@ def get_s3_data_op(context) -> List[Stock]:
     return stocks
 
 @op(
+    name="process_data",
     description="Given a list of stocks return the aggregation with the greatest value",
     ins={"stocks": In(List[Stock], description="A list of Stock items")},
     out={"aggregation": Out(Aggregation, description="A custom aggregation that takes the max of the high item")},
@@ -74,6 +76,7 @@ def process_data_op(stocks: List[Stock]) -> Aggregation:
     return aggregation
 
 @op(
+    name="put_redis_data",
     description="Upload an Aggregation to Redis",
     ins={"aggregation": In(Aggregation, description="A custom aggregation that takes the max of the high item")},
     out={"nothing": Out(dagster_type=Nothing, description="Nothing to return")},
@@ -82,6 +85,7 @@ def put_redis_data_op(aggregation: Aggregation):
     pass
 
 @op(
+    name="put_s3_data",
     description="Upload an Aggregation to S3 file",
     ins={"aggregation": In(Aggregation, description="A custom aggregation that takes the max of the high item")},
     out={"nothing": Out(dagster_type=Nothing, description="Nothing to return")},
