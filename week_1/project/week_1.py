@@ -81,7 +81,7 @@ def process_data_op(stocks: List[Stock]) -> Aggregation:
     ins={"aggregation": In(Aggregation, description="A custom aggregation that takes the max of the high item")},
     out={"nothing": Out(dagster_type=Nothing, description="Nothing to return")},
 )
-def put_redis_data_op(aggregation: Aggregation):
+def put_redis_data_op(aggregation: Aggregation) -> Nothing:
     pass
 
 @op(
