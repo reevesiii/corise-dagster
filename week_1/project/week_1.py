@@ -10,6 +10,7 @@ from dagster import (
     String,
     job,
     op,
+    graph,
     usable_as_dagster_type,
 )
 from pydantic import BaseModel
@@ -50,26 +51,47 @@ def csv_helper(file_name: str) -> Iterator[Stock]:
             yield Stock.from_list(row)
 
 
-@op
-def get_s3_data_op():
+@op(
+    description="Get a list of Stocks from an S3 file",
+    config_schema={"s3_key": str},
+    out={"stocks": Out(List[Stock], description="A list of Stock items")},
+)
+def get_s3_data_op(context) -> List[Stock]:
+    stocks = []
+    for stock in csv_helper(context.op_config["s3_key"]):
+        stocks.append(stock)
+    return stocks
+
+@op(
+    description="Given a list of stocks return the aggregation with the greatest value",
+    ins={"stocks": In(List[Stock], description="A list of Stock items")},
+    out={"aggregation": Out(Aggregation, description="A custom aggregation that takes the max of the high item")},
+)
+def process_data_op(stocks: List[Stock]) -> Aggregation:
+    # aggregation = Aggregation(date=datetime(2022, 1, 1, 0, 0), high=10.0)
+    max_item = max(stocks, key=lambda x: x.high)
+    aggregation = Aggregation(date=max_item.date, high=max_item.high)
+    return aggregation
+
+@op(
+    description="Upload an Aggregation to Redis",
+    ins={"aggregation": In(Aggregation, description="A custom aggregation that takes the max of the high item")},
+    out={"nothing": Out(dagster_type=Nothing, description="Nothing to return")},
+)
+def put_redis_data_op(aggregation: Aggregation):
     pass
 
-
-@op
-def process_data_op():
+@op(
+    description="Upload an Aggregation to S3 file",
+    ins={"aggregation": In(Aggregation, description="A custom aggregation that takes the max of the high item")},
+    out={"nothing": Out(dagster_type=Nothing, description="Nothing to return")},
+)
+def put_s3_data_op(aggregation: Aggregation) -> Nothing:
     pass
-
-
-@op
-def put_redis_data_op():
-    pass
-
-
-@op
-def put_s3_data_op():
-    pass
-
 
 @job
 def machine_learning_job():
-    pass
+    stocks = get_s3_data_op()
+    aggregation = process_data_op(stocks)
+    put_redis_data_op(aggregation)
+    put_s3_data_op(aggregation)
