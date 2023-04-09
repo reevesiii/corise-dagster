@@ -100,7 +100,7 @@ def test_put_s3_data(aggregation):
 
 def test_job(file_path):
     result = machine_learning_job.execute_in_process(
-        run_config={"ops": {"get_s3_data_op": {"config": {"s3_key": file_path}}}}
+        run_config={"ops": {"get_s3_data": {"config": {"s3_key": file_path}}}}
     )
     assert result.success
 
