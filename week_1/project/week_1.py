@@ -59,9 +59,7 @@ def csv_helper(file_name: str) -> Iterator[Stock]:
     out={"stocks": Out(List[Stock], description="A list of Stock items")},
 )
 def get_s3_data_op(context) -> List[Stock]:
-    stocks = []
-    for stock in csv_helper(context.op_config["s3_key"]):
-        stocks.append(stock)
+    stocks = list(csv_helper(context.op_config["s3_key"]))
     return stocks
 
 @op(
