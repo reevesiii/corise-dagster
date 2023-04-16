@@ -49,8 +49,6 @@ def process_data(stocks: List[Stock]):
     out={"nothing": Out(dagster_type=Nothing, description="Nothing to return")},
 )
 def put_redis_data(context: OpExecutionContext, aggregation: Aggregation):
-    #context.log.info('put_redis_data json.dumps, bare aggregation object: ' + json.dumps(aggregation))
-
     name = aggregation.date.strftime('%Y-%m-%d %H:%M:%S')
     value = str(aggregation.high)
     context.resources.redis.put_data(name=name, value=value)
@@ -64,10 +62,7 @@ def put_redis_data(context: OpExecutionContext, aggregation: Aggregation):
     out={"nothing": Out(dagster_type=Nothing, description="Nothing to return")},
 )
 def put_s3_data(context: OpExecutionContext, aggregation: Aggregation):
-    # context.log.info('put_s3_data json.dumps, bare aggregation object: ' + json.dumps(aggregation.dict()))
-
     key_name = aggregation.date.strftime('%Y-%m-%d %H:%M:%S')
-
     context.resources.s3.put_data(key_name=key_name, data=aggregation)
 
 
