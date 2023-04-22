@@ -115,6 +115,7 @@ machine_learning_job_local = machine_learning_graph.to_job(
 machine_learning_job_docker = machine_learning_graph.to_job(
     name="machine_learning_job_docker",
     config=docker,
+    op_retry_policy=RetryPolicy(max_retries=10, delay=1),
     resource_defs={"s3": s3_resource, "redis": redis_resource},
 )
 
@@ -122,11 +123,22 @@ machine_learning_job_docker = machine_learning_graph.to_job(
 machine_learning_schedule_local = ScheduleDefinition(job=machine_learning_job_local, cron_schedule="*/15 * * * *")
 
 
-@schedule
+@schedule(job=machine_learning_job_docker, cron_schedule="0 * * * *")
 def machine_learning_schedule_docker():
     pass
 
 
-@sensor
+@sensor(job=machine_learning_job_docker)
 def machine_learning_sensor_docker():
-    pass
+    s3_keys = get_s3_keys(bucket="dagster", prefix="prefix", endpoint_url="http://localstack:4566")
+    if s3_keys:
+        for key in s3_keys:
+            yield RunRequest(
+                run_key=key,
+                run_config={"resources": {"s3": {"config": S3}, "redis": {"config": REDIS}},
+                            "ops": {"get_s3_data": {"config": {"s3_key": key}}}}
+            )
+    else:
+        yield SkipReason("No new s3 files found in bucket.")
+
+
