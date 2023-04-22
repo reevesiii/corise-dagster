@@ -101,9 +101,15 @@ docker = {
     "ops": {"get_s3_data": {"config": {"s3_key": "prefix/stock_9.csv"}}},
 }
 
-
-def docker_config():
-    pass
+@static_partitioned_config(partition_keys=list(map(str, (range(1, 11)))))
+def docker_config(partition_keys):
+    return {
+    "resources": {
+        "s3": {"config": S3},
+        "redis": {"config": REDIS},
+    },
+    "ops": {"get_s3_data": {"config": {"s3_key": f"prefix/stock_{partition_keys}.csv"}}},
+}
 
 
 machine_learning_job_local = machine_learning_graph.to_job(
@@ -114,14 +120,12 @@ machine_learning_job_local = machine_learning_graph.to_job(
 
 machine_learning_job_docker = machine_learning_graph.to_job(
     name="machine_learning_job_docker",
-    config=docker,
+    config=docker_config,
     op_retry_policy=RetryPolicy(max_retries=10, delay=1),
     resource_defs={"s3": s3_resource, "redis": redis_resource},
 )
 
-
 machine_learning_schedule_local = ScheduleDefinition(job=machine_learning_job_local, cron_schedule="*/15 * * * *")
-
 
 @schedule(job=machine_learning_job_docker, cron_schedule="0 * * * *")
 def machine_learning_schedule_docker():
