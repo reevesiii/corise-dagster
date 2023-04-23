@@ -12,7 +12,6 @@ from dagster import (
     RunRequest,
     ScheduleDefinition,
     SensorEvaluationContext,
-    StaticPartitionsDefination,
     SkipReason,
     graph,
     op,
@@ -131,7 +130,11 @@ machine_learning_schedule_local = ScheduleDefinition(job=machine_learning_job_lo
 
 @schedule(job=machine_learning_job_docker, cron_schedule="0 * * * *")
 def machine_learning_schedule_docker():
-    pass
+    for partition_key in docker_config.get_partition_keys():
+        yield RunRequest(
+            run_key=partition_key,
+            run_config=docker_config.get_run_config_for_partition_key(partition_key)
+        )
 
 
 @sensor(job=machine_learning_job_docker)
