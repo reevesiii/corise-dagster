@@ -12,6 +12,7 @@ from dagster import (
     RunRequest,
     ScheduleDefinition,
     SensorEvaluationContext,
+    StaticPartitionsDefination,
     SkipReason,
     graph,
     op,
@@ -100,6 +101,7 @@ docker = {
     },
     "ops": {"get_s3_data": {"config": {"s3_key": "prefix/stock_9.csv"}}},
 }
+
 
 @static_partitioned_config(partition_keys=list(map(str, (range(1, 11)))))
 def docker_config(partition_keys):
